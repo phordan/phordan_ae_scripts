@@ -6,44 +6,54 @@
 // This script catalog effects used in the active project, and the composition(s) and layer(s) they are applied to.
 
 // Additions/Features:
-// - Convenient panel instead of individual alerts.
-// - Displays the effects are grouped in a collabsible tree structure
-//     - option to use Effects or Comps as the top-level grouping
-//     - option to catalog all comps or only the comps selected in the *Project* panel. 
-// - Summary at bottom of panel (unfinished)
+// - convenient panel instead of individual alerts.
+// - displays the effects used in the project, grouped in a collabsible tree structure.
+// - option to use Effects or Comps as the top-level grouping
+// - option to search through all comps or only those selected in the *Project* panel. 
+// - shows unique and total effect instances per comp, effect, and layer
+// - summary at bottom of panel (unfinished)
 //
 // - Available settings:
 //     - show/hide disabled layers & effect instances (unfinished)
 //     - use effect's displayName or matchName
-//          - when an effect uses multiple display names across the project (like if it was renamed), the matchName is always used.
+//          - *when an effect uses multiple display names across the project (like if it was renamed), the matchName is always used*
 
 // - TODO features:
 //     - Finish "Group by Comp"
-//     - Finish Summary at bottom of panel
+//     - Finish Summary at bottom of panel, create summaryData object
+//     - Finish "item details" dialog
+//     - Edge cases (no comps selected, no effects in project/selected comps, etc.)
 //     - Sorting options
-//     - Consideration/warning of nested comps' effects when applicable.
+//     - Consideration/warning of any nested comps' effects when applicable to prevent whoopsies on render
 //     - Filtering options like
 //          - first/third party effects
-//          - Effect visibility list populated from the effects found in project/selection
+//          - Effect visibility toggle list populated from the effects found in project or selection
+//          - A similar manufacturer toggle list
+//          - A similar category toggle list
 //     - Option to hide Counts in tree labels
 //     - Ability to "expand all" or "collapse all" in tree
 //     - Effect/Comp/Layer details dialog when double-clicking an item in the effectsTree
-//     - Exporting effect reports to txt, csv, or json
+//     - Exporting effect reports to txt, csv, pdf, or json
 //          - Project-wide reports with full detail & totals
-//          - Reports respecting current view-filters
+//          - Reports optionally respect current view-filters
 //          - Reports of individual comps, effects, or layers
 //               - *note: see if ScriptUI treeview supports multi-selection*
-//          - json effect reporting could also be used for automatic replacement or warnings in future scripts dealing with farm render nodes. Would need effect index per layer though.
-//     - HTML/CEP refactor allowing for better filtering, ui snappiness, navigation, etc.
+//          - *.json effect reporting could also be used for automatic replacement or warnings in future scripts dealing with farm render nodes. Would need effect index per layer and param storage to replace properly, though.*
+//     - HTML/CEP refactor would allow for better filtering/search, ui snappiness, navigation, etc.
 
 function effectsChecker(thisObj) {
-        // declare anything used in multiple functions like controls
+        // declare anything used in multiple functions like data/controls/settings
         var win, effectsTree, refreshButton, settingsButton;
         var searchAllComps, searchSelectedComps, groupByEffect, groupByComp;
         var settingsPanel, useDisplayNameRadio, useMatchNameRadio, showDisabledCheckbox;
         var projectData = {
             effects: {},
             comps: {},
+        };
+        var summaryData = {
+            effectTotal: 0,
+            compTotal: 0,
+            effectInstanceTotal: 0
         };
         var settings = {
             useDisplayName: true,
@@ -55,8 +65,9 @@ function effectsChecker(thisObj) {
             description: "Catalogs effects used in your project, and indicates the composition(s) and layer(s) they are applied to.",
         };
 
+    // main UI / init function
     function buildUI() {
-        win = (thisObj instanceof Panel) ? thisObj : new Window("palette", "Effects Explorer", undefined, {resizeable: true});
+        win = (thisObj instanceof Panel) ? thisObj : new Window("palette", "Effect Explorer", undefined, {resizeable: true});
         win.orientation = "column";
         win.alignChildren = ["fill", "top"];
         win.spacing = 10;
@@ -78,6 +89,7 @@ function effectsChecker(thisObj) {
         searchGroup.orientation = "row";
         searchGroup.alignment = ["fill", "top"];
         searchGroup.add("statictext", undefined, "Search in:");
+        searchGroup.helpTip = "Search entire project or only the comps selected in the *Project* panel";
         searchAllComps = searchGroup.add("radiobutton", undefined, "All Comps");
         searchSelectedComps = searchGroup.add("radiobutton", undefined, "Selected Comps");
         searchAllComps.value = true;
@@ -120,7 +132,7 @@ function effectsChecker(thisObj) {
         useDisplayNameRadio.value = settings.useDisplayName;
         useMatchNameRadio.value = !settings.useDisplayName;
 
-        showDisabledCheckbox = settingsPanel.add("checkbox", undefined, "Show Disabled Layers & Effect instances");
+        showDisabledCheckbox = settingsPanel.add("checkbox", undefined, "Show Disabled Layers/Effect instances");
         showDisabledCheckbox.value = settings.showDisabled;
 
         var closeSettingsButton = settingsPanel.add("button", undefined, "Back to Effect List");
@@ -130,7 +142,7 @@ function effectsChecker(thisObj) {
         infoGroup.orientation = "column";
         infoGroup.alignment = ["fill", "top"];
         infoGroup.alignChildren = ["left", "top"];
-        infoGroup.add("statictext", undefined, "AE_EffectExplorer " + scriptInfo.version);
+        infoGroup.add("statictext", undefined, "AE Effect Explorer - v" + scriptInfo.version);
         infoGroup.add("statictext", undefined, "Created by " + scriptInfo.author);
         infoGroup.add("statictext", undefined, scriptInfo.description, {multiline: true});
     
@@ -158,8 +170,6 @@ function effectsChecker(thisObj) {
             win.layout.layout(true);
         }
     };
-    
-
 
     function updateDisplay() {
         effectsTree.removeAll();
@@ -170,12 +180,15 @@ function effectsChecker(thisObj) {
         }
     };
 
-
-
     function collectAndDisplayEffects() {
         projectData = {
                 effects: {},
                 comps: {}
+            };
+        summaryData = {
+                effectTotal: 0,
+                compTotal: 0,
+                effectInstanceTotal: 0
             };
         app.beginUndoGroup("Collect Effects");
         
@@ -234,7 +247,7 @@ function effectsChecker(thisObj) {
             }
         }
     };
-
+    // Item info dialog that doesn't work yet
     function showEffectInfo(matchName) {
         var effect = projectData.effects[matchName];
         var infoWindow = new Window("dialog", "Effect Info");
