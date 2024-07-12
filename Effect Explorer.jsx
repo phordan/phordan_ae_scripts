@@ -52,7 +52,8 @@ function effectsChecker(thisObj) {
             effects: {},
             comps: {},
             layers: {},
-            instances: []
+            instances: [],
+            nestedComps: {}
         };
         var summaryData = {
             effectTotal: 0,
@@ -175,13 +176,13 @@ function effectsChecker(thisObj) {
         } else {
             win.layout.layout(true);
         }
-    };
+    }
 
     function ProgressBar(title) {
-        var win = new Window("palette", title, undefined, {closeButton: false});
-        var progressBar = win.add("progressbar", undefined, 0, 100);
+        var progWin = new Window("palette", title, undefined, {closeButton: true});
+        var progressBar = progWin.add("progressbar", undefined, 0, 100);
         progressBar.preferredSize.width = 300;
-        var statusText = win.add("statictext", undefined, "");
+        var statusText = progWin.add("statictext", undefined, "");
         statusText.preferredSize.width = 300;
 
         this.setTotal = function(total) {
@@ -191,17 +192,17 @@ function effectsChecker(thisObj) {
         this.update = function(value) {
             progressBar.value = value;
             statusText.text = "Processing: " + value + " / " + progressBar.maxvalue;
-            win.update();
+            progWin.update();
         };
 
         this.show = function() {
-            win.show();
+            progWin.show();
         };
 
         this.close = function() {
-            win.close();
+            progWin.close();
         };
-    };
+    }
 
     function updateDisplay() {
         effectsTree.removeAll();
@@ -210,7 +211,7 @@ function effectsChecker(thisObj) {
         } else {
             displayEffectsByComp();
         }
-    };
+    }
 
     function updateSearchStatus() {
         var statusText = "";
@@ -224,9 +225,8 @@ function effectsChecker(thisObj) {
         } else {
             statusText = "Exploring " + searchedComps + " Selected Compositions";
         }
-
         searchStatusText.text = statusText;
-    };
+    }
 
     function updateSummary() {
         var effectCount = Object.keys(queryData.effects).length;
@@ -237,7 +237,7 @@ function effectsChecker(thisObj) {
                         instanceCount + " total effect instance" + (instanceCount === 1 ? "" : "s");
 
         summaryText.text = summaryString;
-    };
+    }
 
     function getAllComps() {
         var allComps = [];
@@ -248,7 +248,7 @@ function effectsChecker(thisObj) {
             }
         }
         return allComps;
-    };
+    }
 
     function getSelectedComps() {
         var selectedComps = [];
@@ -259,15 +259,17 @@ function effectsChecker(thisObj) {
             }
         }
         return selectedComps;
-    };
+    }
 
     function collectAndDisplayEffects() {
         queryData = {
                 effects: {},
                 comps: {},
                 layers: {},
-                instances: []
+                instances: [],
+                nestedComps: {}
             };
+
         summaryData = {
                 effectTotal: 0,
                 compTotal: 0,
@@ -278,7 +280,6 @@ function effectsChecker(thisObj) {
         progressBar.show();
         
         app.beginUndoGroup("Collect Effects");
-        app.beginSupressDialogs();
 
 
         try {
@@ -290,7 +291,7 @@ function effectsChecker(thisObj) {
                 progressBar.update(i+1);
             }   
         } finally {
-            app.endSupressDialogs(false);
+    
             app.endUndoGroup();
             progressBar.close();
         }    
@@ -298,41 +299,116 @@ function effectsChecker(thisObj) {
         updateSearchStatus();
         displayEffects();
         updateSummary();
-    };
+    }
 
     function processComposition(comp, parentCompName) {
         parentCompName = parentCompName || null; // This is how you do default params in extendscript
-
         if (!queryData.comps[comp.name]) {
             queryData.comps[comp.name] = {
-                effects: {},
-                nestedComps: [],
-                totalEffectInstances: 0
+                effectCount: 0,
+                enabledEffectCount: 0,
+                nestedInComps: [],
+                conaintsNestedComps: false
             };
+            summaryData.compTotal++;
         }
 
         for (var i = 1; i <= comp.numLayers; i++) {
             var layer = comp.layer(i);
-            if (layer.enabled) {
-                if (layer instanceof AVLayer && layer.source instanceof CompItem) {
-                    queryData.comps[comp.name].nestedComps.push(layer.source.name);
-                    processComposition(layer.source, comp.name);
-                } else {
-                    processLayer(layer, comp.name);
-                }
-            }
+            processLayer(layer, comp.name);
         }
-    };
+    }
 
     function processLayer(layer, compName) {
+        var layerId = compName + "_" + layer.index;
+        if (!queryData.layers[layerId]) {
+            queryData.layers[layerId] = {
+                name: layer.name,
+                index: layer.index,
+                effectCount: 0,
+                enabledEffectCount: 0
+            };
+        }
         var effects = layer.property("ADBE Effect Parade");
         if (effects) {
             for (var j = 1; j <= effects.numProperties; j++) {
                 var effect = effects.property(j);
-                addEffectData(effect, compName, layer.index + ": " + layer.name, layer.enabled && effect.enabled, j);
+                addEffectData(effect, compName, layerId, layer.enabled && effect.enabled, j);
             }
         }
-    };
+    }
+
+    // Populate queryData with effect data while considering relations and updating counts
+function addEffectData(effect, compName, layerId, isEnabled, effectIndex) {
+    var matchName = effect.matchName;
+    var displayName = effect.name;
+
+    // Update effects data
+    if (!queryData.effects[matchName]) {
+        queryData.effects[matchName] = {
+            displayName: displayName,
+            instanceCount: 0,
+            enabledInstanceCount: 0,
+            comps: {}
+        };
+        summaryData.effectTotal++;
+    }
+    queryData.effects[matchName].instanceCount++;
+    if (isEnabled) {
+        queryData.effects[matchName].enabledInstanceCount++;
+    }
+    
+    // Update effect's comp data
+    if (!queryData.effects[matchName].comps[compName]) {
+        queryData.effects[matchName].comps[compName] = {
+            instanceCount: 0,
+            enabledInstanceCount: 0
+        };
+    }
+    queryData.effects[matchName].comps[compName].instanceCount++;
+    if (isEnabled) {
+        queryData.effects[matchName].comps[compName].enabledInstanceCount++;
+    }
+
+    // Update comp data
+    if (!queryData.comps[compName]) {
+        queryData.comps[compName] = {
+            effectCount: 0,
+            enabledEffectCount: 0,
+            nestedInComps: [],
+            containsNestedComps: false
+        };
+    }
+    queryData.comps[compName].effectCount++;
+    if (isEnabled) {
+        queryData.comps[compName].enabledEffectCount++;
+    }
+
+    // Update layer data
+    if (!queryData.layers[layerId]) {
+        queryData.layers[layerId] = {
+            name: layerId.split('_')[1],  // Assuming layerId is in the format "compName_layerName"
+            index: parseInt(layerId.split('_')[1]),
+            effectCount: 0,
+            enabledEffectCount: 0
+        };
+    }
+    queryData.layers[layerId].effectCount++;
+    if (isEnabled) {
+        queryData.layers[layerId].enabledEffectCount++;
+    }
+
+    // Add instance
+    queryData.instances.push({
+        effectMatchName: matchName,
+        compName: compName,
+        layerId: layerId,
+        effectIndex: effectIndex,
+        isEnabled: isEnabled
+    });
+
+    summaryData.effectInstanceTotal++;
+}
 
     /*
     // Item info dialog that doesn't work yet
@@ -351,94 +427,9 @@ function effectsChecker(thisObj) {
         closeButton.onClick = function() { infoWindow.close(); };
         infoWindow.show();
     } */
-
-
-    // Populate queryData with effect data while considering relations and updating counts
-    function addEffectData(effect, compName, layerName, isEnabled, effectIndex) {
-        var matchName = effect.matchName;
-        var displayName = effect.name;
-
-        // Update project-wide effect data
-        if (!queryData.effects[matchName]) {
-            queryData.effects[matchName] = {
-                displayName: displayName,
-                totalInstances: 0,
-                enabledInstances: 0,
-                comps: {}
-            };
-        }
-        if (!queryData.effects[matchName].comps[compName]) {
-            queryData.effects[matchName].comps[compName] = {
-                layers: {},
-                totalInstances: 0,
-                enabledInstances: 0
-            };
-        }
-        if (!queryData.effects[matchName].comps[compName].layers[layerName]) {
-            queryData.effects[matchName].comps[compName].layers[layerName] = {
-                instances: [],
-                enabledInstances: 0,
-                enabled: isEnabled
-            };
-        }
-    
-        // Update comp utilizing-layer and total instance counts per effect 
-        queryData.effects[matchName].totalInstances++;
-        queryData.effects[matchName].comps[compName].totalInstances++;
-        queryData.effects[matchName].comps[compName].layers[layerName].instances.push({
-            index: effectIndex,
-            displayName: displayName,
-            enabled: isEnabled
-        });
-
-        if (isEnabled) {
-            queryData.effects[matchName].enabledInstances++;
-            queryData.effects[matchName].comps[compName].enabledInstances++;
-            queryData.effects[matchName].comps[compName].layers[layerName].enabledInstances++;
-        }
-
-        // Update comp-specific effect data
-        if (!queryData.comps[compName].effects[matchName]) {
-            queryData.comps[compName].effects[matchName] = {
-                effects: {},
-                totalEffectInstances: 0,
-                enabledEffectInstances: 0
-            };
-        }
-        if (!queryData.comps[compName].effects[matchName]) {
-            queryData.comps[compName].effects[matchName] = {
-                displayName: displayName,
-                layers: {},
-                totalInstances: 0,
-                enabledInstances: 0
-            };
-        }
-        if (!queryData.comps[compName].effects[matchName].layers[layerName]) {
-            queryData.comps[compName].effects[matchName].layers[layerName] = {
-                instances: [],
-                enabledInstances: 0,
-                enabled: isEnabled
-            };
-        }
-
-        // Update comp's effect counts
-        queryData.comps[compName].effects[matchName].totalInstances++;
-        queryData.comps[compName].totalEffectInstances++;
-        queryData.comps[compName].effects[matchName].layers[layerName].instances.push({
-            index: effectIndex,
-            displayName: displayName,
-            enabled: isEnabled
-        });
-
-        if (isEnabled) {
-            queryData.comps[compName].effects[matchName].enabledInstances++;
-            queryData.comps[compName].enabledEffectInstances++;
-            queryData.comps[compName].effects[matchName].layers[layerName].enabledInstances++;
-        }
-        summaryData.effectInstanceTotal++;
-    };
     
     // called by refresh button, calls correct tree rebuild function based on specified grouping
+
     function displayEffects() {
         effectsTree.removeAll();
 
@@ -447,7 +438,7 @@ function effectsChecker(thisObj) {
         } else {
             displayEffectsByComp();
         }
-    };
+    }
 
     // helper function to hide redundant counts
     function formatNodeLabel(name, uniqueCount, totalCount) {
@@ -456,99 +447,129 @@ function effectsChecker(thisObj) {
         } else {
             return name + " (" + uniqueCount + ") [" + totalCount + "]";
         }
-    };
+    }
 
     // Build the filtered effects tree using effect.matchName as the top-level grouping
     function displayEffectsByEffect() {
+        effectsTree.removeAll();
+
         var effectsList = Object.keys(queryData.effects).map(function(matchName) {
             return { matchName: matchName, effect: queryData.effects[matchName] };
         });
 
         effectsList.sort(function(a, b) {
-            return b.effect.totalInstances - a.effect.totalInstances;
+            return b.effect.instanceCount - a.effect.instanceCount;
         });
 
         effectsList.forEach(function(effectData) {
-            var matchName = effectData.matchName;
-            var effect = effectData.effect;
-            var nodeName = settings.useDisplayName ? effect.displayName : matchName;
-            var totalInstances = settings.showDisabled ? effect.totalInstances : effect.enabledInstances;
-            var effectNode = effectsTree.add("node", formatNodeLabel(nodeName, Object.keys(effect.comps).length, totalInstances));
-            effectNode.matchName = matchName;
-
-            var compsList = Object.keys(effect.comps).map(function(compName) {
-                return { name: compName, data: effect.comps[compName] };
-            });
-
-            compsList.sort(function(a, b) {
-                return b.data.totalInstances - a.data.totalInstances;
-            });
-
-            compsList.forEach(function(compData) {
-                var compName = compData.name;
-                var compNodeData = compData.data;
-                var compTotalInstances = settings.showDisabled ? compNodeData.totalInstances : compNodeData.enabledInstances;
-                var compNode = effectNode.add("node", formatNodeLabel(compName, Object.keys(compNodeData.layers).length, compTotalInstances));
-
-                var layersList = Object.keys(compNodeData.layers).map(function(layerName) {
-                    return { name: layerName, data: compNodeData.layers[layerName] };
-                });
-
-                layersList.sort(function(a, b) {
-                    return parseInt(a.name.split(':')[0]) - parseInt(b.name.split(':')[0]);
-                });
-
-                layersList.forEach(function(layerData) {
-                    var layerName = layerData.name;
-                    var layerNodeData = layerData.data;
-                    if (settings.showDisabled || layerNodeData.enabled) {
-                        var layerInstances = settings.showdisabled ? layerNodeData.instances.length : layerNodeData.enabledInstances;
-                        var layerNode = compNode.add("node", layerName + " (" + layerInstances + ")");
-                        if (!layerNodeData.enabled) {
-                            layerItem.enabled = false;
-                        }
-                        layerNodeData.instances.forEach(function(instance) {
-                            if (settings.showdisabled || instance.enabled) {
-                                var instanceItem = layerNode.add("item", instance.index + ": " + instance.displayName);
-                                if (!instance.enabled) {
-                                    instanceItem.enabled = false;
-                                }
-                            }
-                        });
-                    }
-                });
-            });
-
-        });
-    };
-
-    // Build the filtered effects tree using comp.name as the top-level grouping
-        // Unfinished / broken; needs disabled logic and new count logic
-    function displayEffectsByComp() {
-        for (var compName in queryData.comps) {
-            var comp = queryData.comps[compName];
-            compNode = effectsTree.add("node", compName + " (" + Object.keys(comp.effects).length = ") [" + comp.totalEffectInstances + "]");
-
-            for (var matchName in comp.effects) {
-                var effect = comp.effects[matchName];
-                var effectNode = compNode.add("node", matchName + " (" + Object.keys(effect.layers).length + ") [" + effect.totalInstances + "]");
+            try {
+                var matchName = effectData.matchName;
+                var effect = effectData.effect;
+                if (!effect) {
+                    $.writeln("Error: effect is undefined for matchName: " + matchName);
+                    return;
+                }
+                var nodeName = settings.useDisplayName ? effect.displayName : matchName;
+                var totalInstances = settings.showDisabled ? effect.instanceCount : effect.enabledInstanceCount;
+                
+                if (!effect.comps) {
+                    $.writeln("Error: effect.comps is undefined for effect: " + nodeName);
+                    effect.comps = {};
+                }
+                
+                var effectNode = effectsTree.add("node", formatNodeLabel(nodeName, Object.keys(effect.comps).length, totalInstances));
                 effectNode.matchName = matchName;
 
-                for (var layerName in effect.layers) {
-                    var layerData = effect.layers[layerName];
-                    var layerItem = effectNode.add("item", layerName + " (" + layerData.instances + ")");
-                    if (!layerData.enabled) {
-                        layerItem.enabled = false;
+                Object.keys(effect.comps).forEach(function(compName) {
+                    var compData = effect.comps[compName];
+                    if (!compData) {
+                        $.writeln("Error: compData is undefined for compName: " + compName);
+                        return;
                     }
-                }
+                    var compInstances = settings.showDisabled ? compData.instanceCount : compData.enabledInstanceCount;
+                    var compNode = effectNode.add("node", formatNodeLabel(compName, compInstances));
+
+                    var compInstances = queryData.instances.filter(function(instance) {
+                        return instance.effectMatchName === matchName && 
+                            instance.compName === compName && 
+                            (settings.showDisabled || instance.isEnabled);
+                    });
+
+                    var layerGroups = groupBy(compInstances, 'layerId');
+                    Object.keys(layerGroups).forEach(function(layerId) {
+                        var layerInstances = layerGroups[layerId];
+                        var layer = queryData.layers[layerId];
+                        if (!layer) {
+                            $.writeln("Error: layer is undefined for layerId: " + layerId);
+                            return;
+                        }
+                        var layerNode = compNode.add("node", formatNodeLabel(layer.name, layerInstances.length));
+
+                        layerInstances.forEach(function(instance) {
+                            var instanceItem = layerNode.add("item", instance.effectIndex + ": " + effect.displayName);
+                            if (!instance.isEnabled) {
+                                instanceItem.enabled = false;
+                            }
+                        });
+                    });
+
+                    // Add nested comp indicator
+                    if (queryData.comps[compName] && queryData.comps[compName].nestedInComps.length > 0) {
+                        compNode.add("item", "* Nested in: " + queryData.comps[compName].nestedInComps.join(", "));
+                    }
+                });
+            } catch (e) {
+                $.writeln("Error in displayEffectsByEffect for effect: " + effectData.matchName + ". Error: " + e.toString());
             }
-        }
-    };
+        });
+    }
+
+    function groupBy(array, key) {
+        return array.reduce(function(result, currentValue) {
+            (result[currentValue[key]] = result[currentValue[key]] || []).push(currentValue);
+            return result;
+        }, {});
+    }
+
+    // Build the filtered effects tree using comp.name as the top-level grouping
+    function displayEffectsByComp() {
+        effectsTree.removeAll();
+
+        Object.keys(queryData.comps).forEach(function(compName) {
+            var comp = queryData.comps[compName];
+            var compNode = effectsTree.add("node", formatNodeLabel(compName, comp.effectCount, comp.enabledEffectCount));
+
+            var compInstances = queryData.instances.filter(function(instance) {
+                return instance.compName === compName && (settings.showDisabled || instance.isEnabled);
+            });
+
+            var effectGroups = groupBy(compInstances, 'effectMatchName');
+            Object.keys(effectGroups).forEach(function(matchName) {
+                var effectInstances = effectGroups[matchName];
+                var effect = queryData.effects[matchName];
+                var effectNode = compNode.add("node", formatNodeLabel(effect.displayName, effectInstances.length));
+
+                var layerGroups = groupBy(effectInstances, 'layerId');
+                Object.keys(layerGroups).forEach(function(layerId) {
+                    var layerInstances = layerGroups[layerId];
+                    var layer = queryData.layers[layerId];
+                    var layerNode = effectNode.add("node", formatNodeLabel(layer.name, layerInstances.length));
+
+                    layerInstances.forEach(function(instance) {
+                        var instanceItem = layerNode.add("item", instance.effectIndex + ": " + effect.displayName);
+                        if (!instance.isEnabled) {
+                            instanceItem.enabled = false;
+                        }
+                    });
+                });
+            });
+        });
+    }
 
 
 
     buildUI();
     collectAndDisplayEffects();
-};
+}
 
 effectsChecker(this);
