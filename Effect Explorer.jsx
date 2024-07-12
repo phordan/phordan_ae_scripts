@@ -412,7 +412,7 @@ function addEffectData(effect, compName, layerId, isEnabled, effectIndex) {
 
     /*
     // Item info dialog that doesn't work yet
-
+    // tbh maybe the dblclick event just won't work on treeview nodes/items like it can't get their data
     function showEffectInfo(matchName) {
         var effect = queryData.effects[matchName];
         var infoWindow = new Window("dialog", "Effect Info");
@@ -428,8 +428,8 @@ function addEffectData(effect, compName, layerId, isEnabled, effectIndex) {
         infoWindow.show();
     } */
     
+    
     // called by refresh button, calls correct tree rebuild function based on specified grouping
-
     function displayEffects() {
         effectsTree.removeAll();
 
