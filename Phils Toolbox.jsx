@@ -28,19 +28,19 @@ function socialMediaFormatExpr(count) {
 
 function squirclePathExpr(pathID) {
 	return [
-	
+	// TODO: transfer that shiz
 	];
 }
 
 function highlightHashtagsExpr() {
 	return [
-
+	// TODO: transfer that shiz
 	];
 }
 
 function hideEmojiExpr() {
 	return [
-
+	// TODO: transfer that shiz
 	];
 }
 
@@ -188,7 +188,7 @@ var layout = [
     },
 		{
         type: 'panel',
-        label: 'Highlight / Hide Emoji',
+        label: 'Text Selectors/Animators',
         children: [
 			{
                 type: 'button',
@@ -197,7 +197,7 @@ var layout = [
             },
 			{
                 type: 'button',
-                label: 'Apply Format',
+                label: 'Hide Emoji',
                 onClick: 'applyHideEmoji'
             }
         ]
