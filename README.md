@@ -25,7 +25,7 @@ We shouldn't be scared to just edit our expressions; to me, relying on links tha
 Applies the number formatting expression to a single Text Layer's Source Text Property. It declares a `count` variable that should be of type `Number`. You can provide an initial count via the panel prior to applying, or it will also provide a default. 
 It is easy to edit the expression and link count to a Slider or external property instead. 
 
-### Highlight Hashtags / Hide Emoji
+### Highlight Hashtags / Hide Emoji _(In-Progress)_:
 **Automatically color hashtags and hide _emoji_ in a Text Layer, via _Animators_ and _Expression Selectors_.**
 
 _These work better when the source text is something you'll change often, or is linked to a big set of data, like for a template._
