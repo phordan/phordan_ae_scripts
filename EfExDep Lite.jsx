@@ -19,6 +19,8 @@
 
 // - Known Issues/Planned Features:
 //     - displayName in Tree View only uses the first displayName found in the project, not all of them
+//     - showing disabled effects may have unexpected behavior & instance counts
+//     - Haven't implemented emabled/disabled instance count in summary yet
 //
 // - TODO fix/features:
 //     - Add Sorting options
@@ -62,12 +64,13 @@ function effectsChecker(thisObj) {
         var scriptInfo = {
             version: "1.0.0",
             author: "Phordan",
+            repoLink: "https://github.com/phordan/phordan_ae_scripts/blob/main/EfExDep%20Lite.jsx",
             description: "Catalogs effects used in your project, and indicates the composition(s) and layer(s) they are applied to.",
         };
 
     // main UI / init function
     function buildUI() {
-        win = (thisObj instanceof Panel) ? thisObj : new Window("palette", "Effect Explorer [DEPRECATED]", undefined, {resizeable: true});
+        win = (thisObj instanceof Panel) ? thisObj : new Window("palette", "EfExDep Lite", undefined, {resizeable: true});
         win.orientation = "column";
         win.alignChildren = ["fill", "top"];
         win.spacing = 8;
@@ -139,7 +142,7 @@ function effectsChecker(thisObj) {
         summaryGroup.orientation = "column";
         summaryGroup.alignment = ["fill", "bottom"];
         summaryGroup.alignChildren = ["fill", "center"];
-        summaryText = summaryGroup.add("statictext", undefined, Object.keys(queryData.effects).length + " effects across " + Object.keys(queryData.comps).length + " comp(s)" +  "\r3737 total effect instances", {multiline: true});
+        summaryText = summaryGroup.add("statictext", undefined, "Refresh to find Effects...\r\r", {multiline: true});
 
         settingsPanel = mainPanel.add("group");
         settingsPanel.margins = [8,8,8,8];
@@ -168,9 +171,10 @@ function effectsChecker(thisObj) {
         var infoGroup = settingsPanel.add("panel", undefined, "Info");
         infoGroup.orientation = "column";
         infoGroup.alignment = ["fill", "top"];
-        infoGroup.alignChildren = ["left", "top"];
+        infoGroup.alignChildren = ["fill", "top"];
         infoGroup.add("statictext", undefined, "AE Effect Explorer - v" + scriptInfo.version);
         infoGroup.add("statictext", undefined, "Created by " + scriptInfo.author);
+        infoGroup.add("statictext", undefined, "Source code:" + "\r" + scriptInfo.repoLink, {multiline: true});
         infoGroup.add("statictext", undefined, scriptInfo.description, {multiline: true});
     
 
@@ -361,8 +365,8 @@ function effectsChecker(thisObj) {
 
 		var summaryString = effectCount + (effectCount === 1 ? " effect" : " effects") + " across " +
 							compCount + (compCount === 1 ? " comp" : " comps") + "\r" +
-							instanceCount + " total effect instance" + (instanceCount === 1 ? "" : "s") + "\r" +
-							enabledInstanceCount + " enabled, " + disabledInstanceCount + " disabled";
+							instanceCount + " total effect instance" + (instanceCount === 1 ? "" : "s"); // + "\r" +
+							//enabledInstanceCount + " enabled, " + disabledInstanceCount + " disabled";
 
 		summaryText.text = summaryString;
 	}
