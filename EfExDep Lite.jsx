@@ -11,6 +11,7 @@
 // - satus & summary at top & bottom of panel
 // - Separate Dependency Checker to focus on a single composition
 //     - Show direct fx dependencies AND nested dependencies from any comps within the target comp
+//     - Ensures disabled effects are excluded from dependencies, unlike the tree view
 //
 // - Available settings:
 //     - show/hide disabled layers & effect instances
@@ -19,7 +20,8 @@
 
 // - Known Issues/Planned Features:
 //     - displayName in Tree View only uses the first displayName found in the project, not all of them
-//     - showing disabled effects may have unexpected behavior & instance counts
+//     - Disabled effects still create "Effect" node in tree view
+//     - showing disabled effects does represent them in the tree view, but may have unexpected behavior & instance counts
 //     - Haven't implemented emabled/disabled instance count in summary yet
 //
 // - TODO fix/features:
