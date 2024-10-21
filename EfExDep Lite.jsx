@@ -1,4 +1,4 @@
-// EfExDep Lite.jsx v0.9.0
+// EfExDep Lite.jsx v1.0.0
 // Phordan 2024
 
 // This script catalogs effects used in the active project, and the composition(s) and layer(s) they are applied to. It also provides a full recursive dependency checker for single compositions.
@@ -61,7 +61,7 @@ function effectsChecker(thisObj) {
         };
         var scriptInfo = {
             version: "1.0.0",
-            author: "Phillip Jordan",
+            author: "Phordan",
             description: "Catalogs effects used in your project, and indicates the composition(s) and layer(s) they are applied to.",
         };
 
