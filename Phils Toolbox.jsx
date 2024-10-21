@@ -26,6 +26,17 @@ function socialMediaFormatExpr(count) {
     ];
 }
 
+function pinLayerExpr(padding, refLayer, refBelow, pinBottom) {
+	"// adjust padding here if you want"
+	(padding ? "var padding = " + padding + ";" : "var padding = 0;"),
+	(refLayer ? "var refLayer = " + "thisComp.layer('" + refLayer.name + "');" : ("var refLayer = thisComp.layer(index " + (refBelow ? "+ 1);" : "- 1);" ))),
+	"var refRect = refLayer.sourceRectAtTime(time, false);",
+	( pinBottom ? "var refBottom = refLayer.toComp([0, refRect.top + refRect.height])[1];" 
+				: "var refRight = refRect.toComp([refRect.left + refRect.width, 0])[0];"
+	),
+	( pinBottom ? "refBottom - padding" : "refRight + padding")
+}
+
 function squirclePathExpr(pathID) {
 	return [
 	// TODO: transfer that shiz
