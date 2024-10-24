@@ -8,7 +8,7 @@
 // - Fixed bug where layer index was NaN when displayed in the tree view
 // - Fixed bug where disabled effects weren't being excluded from the tree view
 // - Disabled layers/effects now display properly in tree view when "Show Disabled Layers/Effects" is enabled
-//     - disabled effects are still mishandled when in "group by comp" view, however
+//     - comps with disabled effects are still appear when hidden when in "group by comp" view
 // - "Show Disabled Layers/Effects" is now enabled by default
 //
 
@@ -27,7 +27,7 @@
 //     - use effect's displayName or matchName
 //          - *when an effect uses multiple display names across the project (like if it was renamed), the matchName is always used*
 
-// - Known Issues/Planned Features:
+// - Known Issues:
 //     - displayName in Tree View only uses the first displayName found in the project, not all of them
 //     - Disabled effects still create "Effect" node in tree view
 //     - showing disabled effects does represent them in the tree view, but may have unexpected behavior & instance counts
@@ -47,6 +47,8 @@
 //          - Project-wide reports with full detail & totals
 //          - Reports optionally respect current view-filters
 //          - Reports of individual comps, effects, or layers
+//     - Font Dependencies
+//     - Purge Disabled Effects from project.
 
 
 function effectsChecker(thisObj) {
@@ -185,9 +187,14 @@ function effectsChecker(thisObj) {
         infoGroup.alignChildren = ["fill", "top"];
         infoGroup.add("statictext", undefined, "AE Effect Explorer - v" + scriptInfo.version);
         infoGroup.add("statictext", undefined, "Created by " + scriptInfo.author);
-        infoGroup.add("statictext", undefined, "Source code:" + "\r" + scriptInfo.repoLink, {multiline: true});
+        infoGroup.add("statictext", undefined, "Source & Docs:" + "\r" + scriptInfo.repoLink, {multiline: true});
         infoGroup.add("statictext", undefined, scriptInfo.description, {multiline: true});
-    
+
+        var helpGroup = settingsPanel.add("panel", undefined, "Help");
+        helpGroup.orientation = "column";
+        helpGroup.alignment = ["fill", "top"];
+        helpGroup.alignChildren = ["fill", "top"];
+        helpGroup.add('statictext', undefined, 'Use the tree view to explore effects in your project and comps. Use "dependency check" to see all of the required effects for a single comp.', {multiline: true});
 
         refreshButton.onClick = collectAndDisplayEffects;
         dependencyButton.onClick = function() {
@@ -312,7 +319,6 @@ function effectsChecker(thisObj) {
         progressBar.show();
         
         app.beginUndoGroup("Collect Effects");
-
 
         try {
             var compsToProcess = searchAllComps.value ? getAllComps() : getSelectedComps();
@@ -478,6 +484,7 @@ function effectsChecker(thisObj) {
 	}
 
     // Build the filtered effects tree using effect.matchName as the top-level grouping
+
     function displayEffectsByEffect() {
         effectsTree.removeAll();
 
@@ -595,7 +602,6 @@ function effectsChecker(thisObj) {
                         if (displayedLayerInstances > 0) {
                             var layerNode = effectNode.add("node", ogIndex + ": " + 
                                 formatNodeLabel(layer.name, displayedLayerInstances, layerInstances.length));
-
                             layerInstances.forEach(function (instance) {
                                 if (settings.showDisabled || (instance.isLayerEnabled && instance.isEffectEnabled)) {
                                     var instanceItem = layerNode.add("item", instance.effectIndex + ": " + effect.displayName);
