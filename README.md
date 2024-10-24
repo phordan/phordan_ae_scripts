@@ -6,8 +6,7 @@ Welcome! The `phordan_ae_scripts` repo is where I'm sharing the ScriptUI panels 
 _**Effect Explorer and Dependency Checker**_
 ![image](https://github.com/user-attachments/assets/12a9afee-c1cd-427a-ab1b-9413abf435b9)
 - A *QC/Troubleshooting tool* that lets you see all the effects used in your project, with options for search-scope and view-grouping.
-- The 
-- **Dependency Checker** focuses only on one Comp, listing _all_ of the unique effect(s) it relies on in this manner:
+- The **Dependency Checker** focuses only on **one** Comp, listing _all_ of the unique effect(s) it relies on in this manner:
    - _**"Direct"**_ dependencies, meaning effects used _directly on layers_ in the Target Comp. And...
    - _**"Nested"**_ effect dependencies, meaning effects used in comp(s) the target Comp contains, and is therefore reliant on in order to render in it's intended form.
   
