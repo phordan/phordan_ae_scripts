@@ -1,7 +1,16 @@
-// EfExDep Lite.jsx v1.0.0
+// EfExDep Lite.jsx v1.0.1
 // Phordan 2024
 
 // This script catalogs effects used in the active project, and the composition(s) and layer(s) they are applied to. It also provides a full recursive dependency checker for single compositions.
+
+// Changelog: 
+// (v1.0.1) 
+// - Fixed bug where layer index was NaN when displayed in the tree view
+// - Fixed bug where disabled effects weren't being excluded from the tree view
+// - Disabled layers/effects now display properly in tree view when "Show Disabled Layers/Effects" is enabled
+//     - disabled effects are still mishandled when in "group by comp" view, however
+// - "Show Disabled Layers/Effects" is now enabled by default
+//
 
 // Features (v1.0.0):
 // - displays the effects used in the project, grouped in a collabsible tree structure.
@@ -61,10 +70,10 @@ function effectsChecker(thisObj) {
         };
         var settings = {
             useDisplayName: true,
-            showDisabled: false
+            showDisabled: true
         };
         var scriptInfo = {
-            version: "1.0.0",
+            version: "1.0.1",
             author: "Phordan",
             repoLink: "https://github.com/phordan/phordan_ae_scripts/blob/main/EfExDep%20Lite.jsx",
             description: "Catalogs effects used in your project, and indicates the composition(s) and layer(s) they are applied to.",
@@ -368,7 +377,7 @@ function effectsChecker(thisObj) {
 		var summaryString = effectCount + (effectCount === 1 ? " effect" : " effects") + " across " +
 							compCount + (compCount === 1 ? " comp" : " comps") + "\r" +
 							instanceCount + " total effect instance" + (instanceCount === 1 ? "" : "s"); // + "\r" +
-							//enabledInstanceCount + " enabled, " + disabledInstanceCount + " disabled";
+							// enabledInstanceCount + " enabled, " + disabledInstanceCount + " disabled";
 
 		summaryText.text = summaryString;
 	}
@@ -400,7 +409,7 @@ function effectsChecker(thisObj) {
         }
 
         queryData.effects[matchName].instanceCount++;
-        if (isLayerEnabled && isEffectEnabled) {
+        if (isEffectEnabled) {
             queryData.effects[matchName].enabledInstanceCount++;
         }
         
@@ -413,7 +422,7 @@ function effectsChecker(thisObj) {
         }
 
         queryData.effects[matchName].comps[compName].instanceCount++;
-        if (isLayerEnabled && isEffectEnabled) {
+        if (isEffectEnabled) {
             queryData.effects[matchName].comps[compName].enabledInstanceCount++;
         }
 
@@ -485,7 +494,8 @@ function effectsChecker(thisObj) {
             var effect = effectData.effect;
             var nodeName = settings.useDisplayName ? effect.displayName : matchName;
             var totalInstances = settings.showDisabled ? effect.instanceCount : effect.enabledInstanceCount;
-            var effectNode = effectsTree.add("node",formatNodeLabel(nodeName, Object.keys(effect.comps).length, totalInstances), {expanded: true});
+            var effectNode = (!settings.showDisabled && effect.enabledInstanceCount !== 0) ? effectsTree.add("node", formatNodeLabel(nodeName, Object.keys(effect.comps).length, totalInstances)) : (settings.showDisabled && effect.instanceCount !== 0) ? effectsTree.add("node", formatNodeLabel(nodeName, Object.keys(effect.comps).length, totalInstances), {expanded: true}) : null;
+            if (effectNode !== null) {
             effectNode.matchName = matchName;
             
             Object.keys(effect.comps).forEach(function (compName) {
@@ -511,8 +521,10 @@ function effectsChecker(thisObj) {
 
             Object.keys(layerGroups).forEach(function (layerId) {
                 var layerInstances = layerGroups[layerId];
-                var layer = queryData.layers[layerId];
-                var layerNode = compNode.add("node", layer.index + ": " + formatNodeLabel(layer.name, layerInstances.length));
+                var layer = queryData.layers[layerId];                
+                var lastUnderscoreIdx = layerId.lastIndexOf('_');
+                var ogIndex = layerId.substring(lastUnderscoreIdx + 1);
+                var layerNode = compNode.add("node", ogIndex + ": " + formatNodeLabel(layer.name, layerInstances.length));
 
                 if (!layer.isEnabled) {
                     layerNode.enabled = false;
@@ -531,6 +543,7 @@ function effectsChecker(thisObj) {
 
             });
             });
+            };
         });
     }
 
@@ -570,6 +583,8 @@ function effectsChecker(thisObj) {
                     Object.keys(layerGroups).forEach(function (layerId) {
                         var layerInstances = layerGroups[layerId];
                         var layer = queryData.layers[layerId];
+                        var lastUnderscoreIdx = layerId.lastIndexOf('_');
+                        var ogIndex = layerId.substring(lastUnderscoreIdx + 1);
                         
                         var enabledLayerInstances = layerInstances.filter(function(instance) {
                             return instance.isLayerEnabled && instance.isEffectEnabled;
@@ -578,7 +593,7 @@ function effectsChecker(thisObj) {
                         var displayedLayerInstances = settings.showDisabled ? layerInstances.length : enabledLayerInstances.length;
                         
                         if (displayedLayerInstances > 0) {
-                            var layerNode = effectNode.add("node", layer.index + ": " + 
+                            var layerNode = effectNode.add("node", ogIndex + ": " + 
                                 formatNodeLabel(layer.name, displayedLayerInstances, layerInstances.length));
 
                             layerInstances.forEach(function (instance) {
@@ -593,7 +608,6 @@ function effectsChecker(thisObj) {
                     });
                 }
             });
-
         });
     }
 

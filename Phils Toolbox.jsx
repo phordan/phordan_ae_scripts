@@ -26,15 +26,15 @@ function socialMediaFormatExpr(count) {
     ];
 }
 
-function pinLayerExpr(padding, refLayer, refBelow, pinBottom) {
+function pinLayerExpr(padding, refLayer, pinEdge) {
 	"// adjust padding here if you want"
 	(padding ? "var padding = " + padding + ";" : "var padding = 0;"),
 	(refLayer ? "var refLayer = " + "thisComp.layer('" + refLayer.name + "');" : ("var refLayer = thisComp.layer(index " + (refBelow ? "+ 1);" : "- 1);" ))),
 	"var refRect = refLayer.sourceRectAtTime(time, false);",
-	( pinBottom ? "var refBottom = refLayer.toComp([0, refRect.top + refRect.height])[1];" 
+	( pinBottom.value ? "var refBottom = refLayer.toComp([0, refRect.top + refRect.height])[1];" 
 				: "var refRight = refRect.toComp([refRect.left + refRect.width, 0])[0];"
 	),
-	( pinBottom ? "refBottom - padding" : "refRight + padding")
+	( pinBottom.value ? "refBottom - padding" : "refRight + padding")
 }
 
 function squirclePathExpr(pathID) {
@@ -116,7 +116,9 @@ function applySquirclePath(pathID) {
 		return;
 	}
 	return;
-}
+};
+
+
 
 function createUI(win, layout, functions) {
     function createControl(parent, spec) {
@@ -157,6 +159,20 @@ function createUI(win, layout, functions) {
                     }
                 }
                 break;
+            case 'radiobutton':
+                control = parent.add('radiobutton', undefined, spec.label);
+                if (spec.onChange) {
+                    var changeHandler = functions[spec.onChange];
+                    control.onChange = changeHandler;
+                }
+                break;
+            case 'dropdownlist':
+                control = parent.add('dropdownlist', undefined, spec.items);
+                if (spec.onChange) {
+                    var changeHandler = functions[spec.onChange];
+                    control.onChange = changeHandler;
+                }
+                break;
         }
         if (spec.properties) {
             for (var key in spec.properties) {
@@ -174,6 +190,50 @@ function createUI(win, layout, functions) {
 }
 
 var layout = [
+    {
+        type: 'panel', 
+        label: 'Pin Layer to Reference Layer Edge',
+        children: [
+            {
+                type: 'group',
+                children: [
+                    { type: 'statictext', text: 'Reference Layer:' },
+                    { 
+                        type: 'buttonGroup', 
+                        properties: { orientation: 'column', onChange: 'validateRefLayer' },
+                        children: [
+                            { type: 'radiobutton', label: 'Layer Above'  },
+                            { type: 'radiobutton', label: 'Layer Below'  },
+                            { type: 'radiobutton', label: 'Choose:' },
+                        ]    
+                    },
+                    /*{
+                        type: 'dropdownlist',
+                        items: app.project.activeItem.layers,
+                        onChange: 'validateRefLayer'
+                    },*/
+                ]
+            },
+            {
+                type: 'dropdownlist', 
+                items: ['Top', 'Bottom', 'Left', 'Right'],
+                onChange: 'validatePinEdge'
+            },
+            { type: 'statictext', text: '(Optional) Extra Padding:' },
+            {
+                type: 'edittext',
+                properties: { characters: 5 },
+                onChange: 'validatePadding'
+            },
+            {
+                type: 'button',
+                label: 'pin sel. Layer to ref. Layer',
+                onClick: 'applyPinLayer'
+            },
+
+            
+        ]
+    },
     {
         type: 'panel',
         label: 'Social Media Formatter',
@@ -237,7 +297,6 @@ var layout = [
         ]
     },
 ];
-
 var functions = {
     validateCount: function() {
         this.text = this.text.replace(/[^0-9]/g, '');
@@ -255,7 +314,29 @@ var functions = {
 	},
 	applyHideEmoji: function(parent) {
 		applyTextExpr(hideEmojiExpr, "", "opacity");
-	}
+	},
+    
+    validateRefLayer: function(parent) {
+
+    },
+
+    validatePinEdge: function(parent) {
+        var pinEdge = parent.selection;
+        if (pinEdge) {
+            parent.enabled = true;
+        } else {
+            parent.enabled = false;
+        }
+    },
+
+    validatePadding: function(parent) {
+        var padding = parent.text;
+        if (padding) {
+            parent.enabled = true;
+        } else {
+            parent.enabled = false;
+        }
+    },
 };
 
 function buildUI(thisObj) {
