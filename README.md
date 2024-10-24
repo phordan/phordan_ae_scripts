@@ -14,6 +14,7 @@ The main **Tree View** is great for hunting down Effect locations down to the ef
 
 ### [Font Wrangler](https://github.com/phordan/phordan_ae_scripts/wiki/Font-Wrangler)
 _**Lists fonts used in a comp**_
+![image](https://github.com/user-attachments/assets/1eb67e77-65ad-4418-9f85-467b62b87781)
 Shows the fonts used in a single comp.
 > [!WARNING]
 > This script is limited to fonts set on the first character of a text layer.
