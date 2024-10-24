@@ -100,7 +100,7 @@ function applySquirclePath(pathID) {
 	var selectedLayers = comp.selectedLayers;
 	if (selectedLayers.length === 0) {
 		// no layers selected, so we need to create a new one
-		var layer = comp.layers.addNull();
+		var layer = comp.layers.addShape();
 		layer.name = "Squircle";
 		layer.kind = LayerKind.SHAPE;
 		selectedLayers = [layer];
@@ -317,7 +317,7 @@ var functions = {
 	},
     
     validateRefLayer: function(parent) {
-
+        
     },
 
     validatePinEdge: function(parent) {

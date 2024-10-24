@@ -2,7 +2,7 @@
 Welcome! The `phordan_ae_scripts` repo is where I'm sharing the ScriptUI panels I create for my own needs. When choosing ScriptUI over CEP extensions I usually focus on simple, distributable, single-purpose utilities for techniques I use often or find unique, as well as QC tools like Effect Explorer; I try to make anything I make in ScriptUI as easy to use as possible.
 
 ## Scripts:
-### EfExDep Lite
+### [EfExDep Lite](https://github.com/phordan/phordan_ae_scripts/wiki/EfExDep-Lite)
 _**Effect Explorer and Dependency Checker**_
 ![image](https://github.com/user-attachments/assets/12a9afee-c1cd-427a-ab1b-9413abf435b9)
 - A *QC/Troubleshooting tool* that lets you see all the effects used in your project, with options for search-scope and view-grouping.
@@ -11,6 +11,14 @@ _**Effect Explorer and Dependency Checker**_
    - _**"Nested"**_ effect dependencies, meaning effects used in comp(s) the target Comp contains, and is therefore reliant on in order to render in it's intended form.
   
 The main **Tree View** is great for hunting down Effect locations down to the effect index of a layer, and generally seeing what fx the project uses, but look to _Dependency Checker_ for an accurate tell of "What effects does this comp need?" when handing off work, prepping to render on a different machine, or other QC situations.
+
+### [Font Wrangler](https://github.com/phordan/phordan_ae_scripts/wiki/Font-Wrangler)
+_**Lists fonts used in a comp**_
+Shows the fonts used in a single comp.
+> [!WARNING]
+> This script is limited to fonts set on the first character of a text layer.
+> It cannot look at fonts set by effects like Numbers, Red Giant effects, etc.
+> Workarounds for these cases are being looked into, and suggestions are welcome. 
 
 ### [Phil's Toolbox](https://github.com/phordan/phordan_ae_scripts/wiki/Phil's-Toolbox)
 _**Various Uncommon Utilities**_  

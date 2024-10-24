@@ -1,3 +1,9 @@
+// Phil's Font Wrangler.jsx v1.0.0
+// lists fonts used in a comp
+
+// limitation: can only look at font set on first character of text layer 
+// limitation: cannot look at fonts set by effects like Numbers, Red Giant effects, etc. 
+// TODO: search all comps
 
 function fontWrangler(thisObj) {
 
@@ -21,15 +27,11 @@ function buildUI() {
 
 	var refreshButton = selectCompGroup.add("button", undefined, "Search Fonts");
 
-
 	fontList = panel.add("listbox", undefined, 'direct',
 		{numberOfColumns: 2, showHeaders: true,
 		columnTitles: ['Layer', 'Font Name']});
 	fontList.alignment = ["fill", "fill"];
 	fontList.preferredSize.height = 169;
-	
-
-
 
 	populateCompDropdown();
 
@@ -68,29 +70,19 @@ function populateCompDropdown() {
 function updateFontList(comp) {
 	fontList.removeAll();
 	var fontRecord = [];
-	fontRecord.push({layerName: "Layer Name", layerIndex: 1, fontName: "Font Name"});
+	// fontRecord.push({layerName: "Layer Name", layerIndex: 1, fontName: "Font Name"});
 
-	/*for (var i = 1; i <= comp.numLayers; i++) {
+	for (var i = 1; i <= comp.numLayers; i++) {
 		var layer = comp.layer(i);
 		if (layer instanceof TextLayer && layer.text.sourceText) {
-			
-			for (ch in layer.text.sourceText) {
-				var font = ch.font;
-				var tempEntryBasket = [];
-				var fontRecordEntry = {
-					fontName: font.name,
-					layerIndex: layer.index
-					layerName: layer.name
-
-				};
-				tempEntryBasket.push(fontRecordEntry);
+			var entry = {
+				layerName: layer.name,
+				layerIndex: layer.index,
+				fontName: layer.text.sourceText.value.font
 			}
-			tempEntryBasket = tempEntryBasket.unique();
-			for (entry in tempEntryBasket) {
 				fontRecord.push(entry);
-			}
 		}
-	}*/
+	}
 	populateFontList(fontRecord);
 }
 
@@ -102,7 +94,6 @@ function populateFontList(fontRecord) {
 		}
 	}
 };
-				
 
 buildUI();
 
