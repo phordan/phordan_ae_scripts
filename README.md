@@ -16,7 +16,7 @@ The main **Tree View** is great for hunting down Effect locations down to the ef
 _**Lists fonts used in a comp**_
 ![image](https://github.com/user-attachments/assets/1eb67e77-65ad-4418-9f85-467b62b87781)
 Shows the fonts used in a single comp.
-> [!CAUTION]
+> [!IMPORTANT]
 > This script is limited to fonts set on the first character of a text layer.
 > It cannot look at fonts set by effects like Numbers, Red Giant effects, etc.
 > Workarounds for these cases are being looked into, and suggestions are welcome. 
@@ -28,11 +28,11 @@ Shows the fonts used in a single comp.
   - [perf] Comps iterated through properly (standard `for` loop instead of `for...in`)
   - [perf] "Show Fonts" button moved to its own row, misc UI tweaks
 
-  -[TODO] Nested Comp Support (currently only works on top-level comps)
-  -[TODO] Expose fonts inside textDocument by searching through every character (Deep/Exhaustive Scan)
-  -[TODO] Expose fonts referenced inside Expressions
-  -[TODO] Expose fonts referenced inside Effect Properties (Red Giant, Numbers, etc.)
-  -[TODO] add Summary/Status text
+  - [TODO] Nested Comp Support (currently only works on top-level comps)
+  - [TODO] Expose fonts inside textDocument by searching through every character (Deep/Exhaustive Scan)
+  - [TODO] Expose fonts referenced inside Expressions
+  - [TODO] Expose fonts referenced inside Effect Properties (Red Giant, Numbers, etc.)
+  - [TODO] add Summary/Status text
 
 ### [Phil's Toolbox](https://github.com/phordan/phordan_ae_scripts/wiki/Phil's-Toolbox)
 _**Various Uncommon Utilities**_  
